@@ -68,6 +68,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
 // Paste your Apps Script web app URL here once, so every landing page uses it:
 var DEFAULT_EP='https://script.google.com/macros/s/AKfycbwUnSR-TOLjkv3rKc7-GFDdseWWomm5pxaoVy9i59HCA0W-vBWYlDEc2KeJ1eNhRKDcHA/exec';
 
+var COMMS=['Real Men in Christ (Remix)','Kindred Hearts (KH)','One in Christ (OIC)','Crossroads','Real Life Youth (RLY)','Australian Surplus','Southridge'];
 var TYPES={
 event:{label:'Event',hint:'Conference, service, workshop, outing',dateLabel:'Event date',verb:'Register',cta:'Save my seat'},
 resource:{label:'Resource',hint:'Ebook, course, template, tool',dateLabel:'Launch or closing date',verb:'Get it',cta:'Send me the resource'},
@@ -106,6 +107,7 @@ function step1(){
  var T=TYPES[S.type];
  show(progress()+'<div class="card"><h2>Tell us about “'+esc(S.f.name)+'”</h2>'+
  '<label for="desc">Short description</label><textarea id="desc" placeholder="What is it, and what will people gain?">'+esc(S.f.desc)+'</textarea>'+
+ '<label for="comm">Promoting to</label><select id="comm">'+['Whole church'].concat(COMMS).map(function(c){return '<option'+((S.f.comm||'Whole church')===c?' selected':'')+'>'+esc(c)+'</option>'}).join('')+'</select>'+
  '<label for="aud">Who is it for?</label><input id="aud" value="'+esc(S.f.aud)+'" placeholder="e.g. Married couples, young professionals">'+
  '<div class="row"><div><label for="date">'+T.dateLabel+'</label><input type="date" id="date" min="'+addDays(1).toISOString().slice(0,10)+'" value="'+esc(S.f.date)+'"></div>'+
  '<div><label for="email">Contact email <small>(optional)</small></label><input type="email" id="email" value="'+esc(S.f.email)+'"></div></div>'+
@@ -113,7 +115,7 @@ function step1(){
  document.getElementById('back').onclick=function(){S.step=0;render()};
  document.getElementById('next').onclick=function(){
   var g=function(i){return document.getElementById(i).value.trim()};
-  S.f.desc=g('desc');S.f.aud=g('aud');S.f.date=g('date');S.f.email=g('email');
+  S.f.comm=g('comm');S.f.desc=g('desc');S.f.aud=g('aud');S.f.date=g('date');S.f.email=g('email');
   if(!S.f.desc)return err('Add a short description.');if(!S.f.date)return err('Pick a date so we can size the plan.');
   if(daysLeft()<1)return err('Choose a date that is tomorrow or later.');
   S.step=2;save();render()}}
@@ -161,7 +163,7 @@ function plan(){
  out.push({name:isEv?'Event day and after':'Date reached and after',range:date,tasks:after,sample:null});
  return out}
 function sample(p){
- var n=S.f.name,d=nice(S.f.date),a=S.f.aud||'you';
+ var n=S.f.name,d=nice(S.f.date),a=S.f.aud||'you';if(S.f.comm&&S.f.comm!=='Whole church')a+=' in '+S.f.comm;else if(S.f.comm)a+=' (all of RLCC)';
  var l='[sign-up link]';
  var t={'Prepare':null,
  'Announce':'Something good is coming: '+n+', '+d+'.\nMade for '+a+'.\n'+short()+'\n'+TYPES[S.type].verb+' here: '+l,
@@ -187,6 +189,7 @@ function landing(){
  if(qa.cost)det.push(['Cost',qa.cost]);
  if(qa.delivery)det.push(['You’ll receive it',qa.delivery]);
  if(qa.stock)det.push(['Availability',qa.stock]);
+ if(f.comm)det.push(['Open to',f.comm==='Whole church'?'The whole church':f.comm]);
  if(f.aud)det.push(['Who it’s for',f.aud]);
  var dl=det.map(function(x){return '<div><dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd></div>'}).join('');
  var desc=esc(f.desc)+(qa.more?' '+esc(qa.more):'');
@@ -196,7 +199,7 @@ function landing(){
  '.hero{background:var(--p);color:#fff;padding:3.5rem 1.4rem 3rem}.w{max-width:680px;margin:0 auto}h1{font:700 clamp(2rem,7vw,3rem)/1.1 Georgia,serif;margin:0 0 1rem}.hero p{font-size:1.15rem;margin:0;opacity:.95}'+
  'dl{display:grid;gap:.9rem;margin:2rem 0}dl div{border-left:4px solid var(--a);padding-left:.9rem}dt{font-weight:700;color:var(--p)}dd{margin:0}'+
  'form{background:#fff;border-radius:14px;padding:1.4rem;box-shadow:0 2px 14px rgba(0,0,0,.08);margin:2rem 0}h2{font:700 1.5rem Georgia,serif;margin:0 0 .6rem;color:var(--p)}'+
- 'label{display:block;font-weight:600;margin:.9rem 0 .3rem}input{width:100%;font:inherit;padding:.75rem;border:1px solid #bfcdd1;border-radius:10px}input:focus-visible,button:focus-visible{outline:3px solid var(--a);outline-offset:2px}'+
+ 'label{display:block;font-weight:600;margin:.9rem 0 .3rem}input,select{width:100%;font:inherit;padding:.75rem;border:1px solid #bfcdd1;border-radius:10px}input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--a);outline-offset:2px}'+
  'button{width:100%;margin-top:1.2rem;font:inherit;font-weight:700;padding:.9rem;border:0;border-radius:10px;background:var(--a);color:#17262b;cursor:pointer}'+
  '.ok{display:none;background:#e7f4ea;border-radius:10px;padding:1rem;margin-top:1rem;font-weight:600}footer{text-align:center;color:#5d7077;font-size:.9rem;padding:0 1rem 2rem}</style></head><body>'+
  '<section class="hero"><div class="w"><h1>'+esc(f.name)+'</h1><p>'+desc+'</p></div></section>'+
@@ -205,13 +208,14 @@ function landing(){
  '<label for="n">Full name</label><input id="n" name="name" required autocomplete="name">'+
  '<label for="e">Email</label><input id="e" name="email" type="email" required autocomplete="email">'+
  '<label for="m">Mobile number</label><input id="m" name="phone" type="tel" autocomplete="tel">'+
- '<input type="hidden" name="item" value="'+esc(f.name)+'"><button type="submit">'+cta+'</button>'+
+ '<label for="c">Your community</label><select id="c" name="community" required><option value="">Select your community</option>'+COMMS.concat(['No Community Yet']).map(function(c){return '<option>'+esc(c)+'</option>'}).join('')+'</select>'+
+ '<input type="hidden" name="audience" value="'+esc(f.comm||'Whole church')+'"><input type="hidden" name="item" value="'+esc(f.name)+'"><button type="submit">'+cta+'</button>'+
  '<div class="ok" id="ok" role="status">Thank you! We received your details and will be in touch soon.</div></form></div>'+
  '<footer>© '+new Date().getFullYear()+' '+esc(f.name)+'</footer>'+
  '<script>var EP='+JSON.stringify(S.endpoint||DEFAULT_EP)+',MAIL='+JSON.stringify(f.email)+';'+
  'document.getElementById("f").addEventListener("submit",function(ev){ev.preventDefault();var fd=new FormData(ev.target),o={};fd.forEach(function(v,k){o[k]=v});'+
  'if(EP){fetch(EP,{method:"POST",mode:"no-cors",body:new URLSearchParams(o)}).then(done,done)}'+
- 'else if(MAIL){location.href="mailto:"+MAIL+"?subject="+encodeURIComponent("Sign-up: "+o.item)+"&body="+encodeURIComponent("Name: "+o.name+"\\nEmail: "+o.email+"\\nMobile: "+o.phone);done()}'+
+ 'else if(MAIL){location.href="mailto:"+MAIL+"?subject="+encodeURIComponent("Sign-up: "+o.item)+"&body="+encodeURIComponent("Name: "+o.name+"\\nEmail: "+o.email+"\\nMobile: "+o.phone+"\\nCommunity: "+o.community);done()}'+
  'else done();function done(){ev.target.reset();document.getElementById("ok").style.display="block"}});<\/script></body></html>'}
 
 function step3(){
