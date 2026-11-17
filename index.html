@@ -238,11 +238,12 @@ function landing(){
  'else done();function done(){ev.target.reset();document.getElementById("ok").style.display="block"}});<\/script></body></html>'}
 
 function step3(){
- var h='<div class="tabs" role="tablist"><button role="tab" id="tp" aria-selected="'+(S.tab==='plan')+'">Marketing plan</button><button role="tab" id="tl" aria-selected="'+(S.tab==='land')+'">Landing page</button></div>';
+ var h='<div class="tabs" role="tablist"><button role="tab" id="tp" aria-selected="'+(S.tab==='plan')+'">Marketing plan</button><button role="tab" id="tl" aria-selected="'+(S.tab==='land')+'">Landing page</button><button role="tab" id="ts" aria-selected="'+(S.tab==='social')+'">Social posts</button></div>';
  if(S.tab==='plan'){
   var D=daysLeft();h+='<div class="card"><h2>'+esc(S.f.name)+'</h2><p class="note">'+D+' day'+(D>1?'s':'')+' until '+esc(nice(S.f.date))+'. This plan fits that window.</p>';
   plan().forEach(function(p){h+='<div class="phase"><h3>'+esc(p.name)+'</h3><div class="when">'+esc(p.range)+'</div><ul>'+p.tasks.map(function(t){return '<li>'+esc(t)+'</li>'}).join('')+'</ul>'+(p.sample?'<div class="sample">'+esc(p.sample)+'</div>':'')+'</div>'});
   h+='<div class="btns noprint"><button id="cp">Copy plan</button><button id="pr">Print or save as PDF</button></div></div>';
+ }else if(S.tab==='social'){h+=socialHtml();
  }else{
   h+='<div class="card" id="land"><div style="margin:0 0 1rem"><iframe id="fr" title="Landing page preview"></iframe></div>'+
   '<div class="btns"><button class="p" id="dl">Download page (.html)</button><button id="ch">Copy HTML</button></div>'+
@@ -250,14 +251,71 @@ function step3(){
  }
  h+='<div class="btns"><button id="e1">Edit answers</button><button id="ne">Start a new one</button></div>';
  show(progress()+h);
- document.getElementById('tp').onclick=function(){S.tab='plan';step3()};document.getElementById('tl').onclick=function(){S.tab='land';step3()};
+ document.getElementById('tp').onclick=function(){S.tab='plan';step3()};document.getElementById('tl').onclick=function(){S.tab='land';step3()};document.getElementById('ts').onclick=function(){S.tab='social';step3()};
  document.getElementById('e1').onclick=function(){S.step=1;save();render()};
  document.getElementById('ne').onclick=function(){if(confirm('Clear everything and start over?')){S={step:0,type:'',f:{},qa:{},tab:'plan',theme:'teal',endpoint:'',email:'',img:''};save();render()}};
  if(S.tab==='plan'){document.getElementById('cp').onclick=function(){copy(planText())};document.getElementById('pr').onclick=function(){window.print()}}
+ else if(S.tab==='social'){bindSocial()}
  else{var fr=document.getElementById('fr');fr.srcdoc=landing();
     document.getElementById('ch').onclick=function(){copy(landing())};
   document.getElementById('dl').onclick=function(){var b=new Blob([landing()],{type:'text/html'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='index.html';document.body.appendChild(a);a.click();a.remove();toast('Downloaded')}}
 }
+var VERSES={event:['Psalm 133:1','Behold, how good and how pleasant it is for brethren to dwell together in unity!'],resource:['Proverbs 4:7','Wisdom is the principal thing; therefore get wisdom: and with all thy getting get understanding.'],service:['Galatians 6:2','Bear ye one another’s burdens, and so fulfil the law of Christ.'],product:['Colossians 3:23','And whatsoever ye do, do it heartily, as to the Lord, and not unto men.']};
+var cur=[];
+function cap(t){return t.charAt(0).toUpperCase()+t.slice(1)}
+function tags(){var w=(S.f.name||'').replace(/[^A-Za-z0-9 ]/g,'').split(/\s+/).filter(Boolean).slice(0,4).map(cap).join('');var t=['#RLCC','#RealLifeChristianCommunities'];if(w)t.push('#'+w);return t.concat({event:['#Church','#Community'],resource:['#Faith','#Discipleship'],service:['#Faith','#Community'],product:['#Faith']}[S.type]).join(' ')}
+function posts(){
+ var f=S.f,qa=S.qa,n=f.name,d=nice(f.date),L=S.link||'[your link]',sd=short(),tg=tags();
+ var verb={event:'register',resource:'get your copy',service:'sign up',product:'order'}[S.type];
+ var done={event:'registered',resource:'signed up',service:'signed up',product:'ordered'}[S.type];
+ var info=['📅 '+d+(qa.time?', '+qa.time:'')];
+ if(qa.venue)info.push('📍 '+qa.venue);if(qa.schedule)info.push('🔁 '+qa.schedule);if(qa.cost)info.push('🎟 '+qa.cost);
+ if(f.comm)info.push('👥 '+(f.comm==='Whole church'?'Open to the whole church':'Open to '+f.comm));
+ var I=info.join('\n'),vs=VERSES[S.type];
+ var V=S.verse===false?'':'\n\n“'+vs[1]+'” '+vs[0]+' (KJV)';
+ var out=[];
+ plan().forEach(function(p,i,all){
+  var it=[],nm=p.name;
+  if(nm==='Prepare'){
+   it=[{plat:'Facebook teaser',text:'Something good is on the way. 🌱\n\nWe’re getting ready for '+n+' and can’t wait to share more.\n\nStay tuned!'},
+   {plat:'Message to your inner circle',text:'Hi! 😊 I’m getting ready to launch '+n+' on '+d+'. Would you help me by sharing it with a few people once the link is ready? Thank you so much! 🙏'}];
+  }else if(nm==='Announce'||nm==='Announce now'){
+   it=[{plat:'Facebook post',text:'📣 '+n+' is coming!\n\n'+sd+'\n\n'+I+'\n\nPlease '+verb+' here: '+L+V+'\n\nKnow someone who needs this? Share this post with them. 💛'},
+   {plat:'Instagram caption',text:'✨ '+n+'\n\n'+sd+'\n\n'+I+'\n\nTap the link in our bio to '+verb+'. 🔗\n\n'+tg},
+   {plat:'Messenger / Viber / WhatsApp group',text:'Hi everyone! 😊 We’re excited to invite you to '+n+' on '+d+'. '+sd+' You can '+verb+' here: '+L+'\n\nPlease share this with someone who would be blessed by it. 🙏'}];
+  }else if(nm==='Build momentum'){
+   it=[{plat:'Facebook post',text:'Why '+n+'? 🤔\n\n'+sd+'\n\nIf you’ve been thinking about it, now is a good time to '+verb+'.\n👉 '+L+'\n\nWho are you bringing with you? Tag them below. 👇'},
+   {plat:'Instagram caption',text:'💬 “I’m looking forward to '+n+' because ____.”\n\nFinish that sentence in the comments, then '+verb+' using the link in our bio.\n\n'+I+'\n\n'+tg},
+   {plat:'Group reminder',text:'Hi! 😊 A gentle reminder about '+n+' on '+d+'. Have you '+done+' yet? Here’s the link: '+L+'\n\nInvite a friend to come with you!'},
+   {plat:'Story or Reel idea',text:'🎥 Record a 20 to 30 second video. Look at the camera and say: “Hi, I’m ____. I’m excited for '+n+' because ____. Join us on '+d+'! Link in bio.” End with your poster or logo on screen.'}];
+  }else if(nm==='Final push'){
+   it=[{plat:'Facebook post',text:'⏰ Last call for '+n+'!\n\n'+I+'\n\nDon’t miss it. '+cap(verb)+' today: '+L+'\n\nPlease share this with someone who hasn’t '+done+' yet. 🙏'},
+   {plat:'Instagram caption',text:'⏳ Last chance! '+n+' is almost here.\n\n'+I+'\n\nTap the link in our bio to '+verb+'.\n\n'+tg},
+   {plat:'Group reminder',text:'Last reminder 🙏 '+n+' is on '+d+(qa.time?' at '+qa.time:'')+'. If you haven’t '+done+' yet, please do it here: '+L+'\n\nWe’d love to see you!'},
+   {plat:'Message to those who signed up',text:'Thank you for signing up for '+n+'! 🙏 Here are the details:\n\n'+I+'\n\nWe look forward to seeing you!'}];
+  }else{
+   it=[{plat:'Facebook thank-you',text:'Thank you to everyone who took part in '+n+'! 🙏\n\nWe’re grateful for each one of you. What stood out to you? Share a short testimony or a photo in the comments.\n\nTo God be the glory!'},
+   {plat:'Instagram caption',text:'🙏 Thank you for '+n+'!\n\nTell us in the comments what blessed you most.\n\n'+tg},
+   {plat:'Group thank-you and feedback',text:'Thank you for being part of '+n+'! 🙏 We’d love your feedback: what was most helpful, and what could we do better? Just reply here.'}];
+  }
+  out.push({name:nm,range:p.range,items:it})});
+ return out}
+function socialHtml(){
+ return '<div class="card"><h2>Social media posts</h2><p class="note">Tap Copy, then paste into Facebook, Instagram, Messenger, Viber or WhatsApp. Post each set during the dates shown.</p>'+
+ '<label for="lk">Your landing page link <small>(added to every post)</small></label><input id="lk" type="url" value="'+esc(S.link)+'" placeholder="https://rlccphil.github.io/your-repo/">'+
+ '<label style="display:flex;gap:.6rem;align-items:center;font-weight:400"><input type="checkbox" id="vs" style="width:auto"'+(S.verse===false?'':' checked')+'> Include a Scripture verse in the Facebook announcement</label>'+
+ '<div id="pl" style="margin-top:1.4rem"></div></div>'}
+function renderPosts(){
+ cur=[];var h='';
+ posts().forEach(function(g){h+='<div class="phase"><h3>'+esc(g.name)+'</h3><div class="when">'+esc(g.range)+'</div>';
+  g.items.forEach(function(x){h+='<p style="margin:.9rem 0 .3rem;font-weight:600">'+esc(x.plat)+'</p><div class="sample">'+esc(x.text)+'</div><div class="btns" style="margin-top:.5rem"><button type="button" data-c="'+cur.length+'">Copy</button></div>';cur.push(x.text)});
+  h+='</div>'});
+ document.getElementById('pl').innerHTML=h}
+function bindSocial(){
+ renderPosts();
+ document.getElementById('lk').oninput=function(){S.link=this.value.trim();save();renderPosts()};
+ document.getElementById('vs').onchange=function(){S.verse=this.checked;save();renderPosts()};
+ document.getElementById('pl').onclick=function(e){var b=e.target.closest('[data-c]');if(b)copy(cur[+b.dataset.c])}}
 function copy(t){try{navigator.clipboard.writeText(t).then(function(){toast('Copied')},function(){toast('Copy failed')})}catch(e){toast('Copy failed')}}
 function toast(m){var d=document.createElement('div');d.className='toast';d.setAttribute('role','status');d.textContent=m;document.body.appendChild(d);setTimeout(function(){d.remove()},1800)}
 
