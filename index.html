@@ -242,7 +242,7 @@ function step3(){
  }else{
   h+='<div class="card" id="land"><div style="margin:0 0 1rem"><iframe id="fr" title="Landing page preview"></iframe></div>'+
   '<div class="btns"><button class="p" id="dl">Download page (.html)</button><button id="ch">Copy HTML</button></div>'+
-  '<p class="note">Upload the downloaded file to any web host, such as GitHub Pages, and share the link.</p></div>';
+  '<p class="note">The file downloads as <b>index.html</b>. Put it at the top level of a new GitHub repo (not inside a folder), then turn on Pages: Settings, Pages, Deploy from a branch, main, / (root).</p></div>';
  }
  h+='<div class="btns"><button id="e1">Edit answers</button><button id="ne">Start a new one</button></div>';
  show(progress()+h);
@@ -252,7 +252,7 @@ function step3(){
  if(S.tab==='plan'){document.getElementById('cp').onclick=function(){copy(planText())};document.getElementById('pr').onclick=function(){window.print()}}
  else{var fr=document.getElementById('fr');fr.srcdoc=landing();
     document.getElementById('ch').onclick=function(){copy(landing())};
-  document.getElementById('dl').onclick=function(){var b=new Blob([landing()],{type:'text/html'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=(S.f.name||'landing').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'.html';document.body.appendChild(a);a.click();a.remove();toast('Downloaded')}}
+  document.getElementById('dl').onclick=function(){var b=new Blob([landing()],{type:'text/html'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='index.html';document.body.appendChild(a);a.click();a.remove();toast('Downloaded')}}
 }
 function copy(t){try{navigator.clipboard.writeText(t).then(function(){toast('Copied')},function(){toast('Copy failed')})}catch(e){toast('Copy failed')}}
 function toast(m){var d=document.createElement('div');d.className='toast';d.setAttribute('role','status');d.textContent=m;document.body.appendChild(d);setTimeout(function(){d.remove()},1800)}
