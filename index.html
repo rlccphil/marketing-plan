@@ -67,7 +67,7 @@ iframe{width:100%;height:560px;border:1px solid var(--line);border-radius:12px;b
 <main id="app"></main>
 <script>
 (function(){
-var S={step:0,type:'',f:{},qa:{},tab:'plan',theme:'teal',endpoint:'',email:''};
+var S={step:0,type:'',f:{},qa:{},tab:'plan',theme:'teal',endpoint:'',email:'',img:''};
 var KEY='promote-planner-v1';
 try{var saved=JSON.parse(localStorage.getItem(KEY)||'null');if(saved){S=Object.assign(S,saved);S.step=Math.min(S.step,2)}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
@@ -133,6 +133,7 @@ function step1(){
   if(daysLeft()<1)return err('Choose a date that is tomorrow or later.');
   S.step=2;save();render()}}
 
+function pickImg(file,cb){var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var sc=Math.min(1,1200/im.width),c=document.createElement('canvas');c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.82))};im.onerror=function(){cb(null)};im.src=r.result};r.onerror=function(){cb(null)};r.readAsDataURL(file)}
 function questions(){
  var q=[];
  if(!S.f.aud)q.push(['aud','Who is the ideal person you want to reach?']);
@@ -144,11 +145,15 @@ function step2(){
  var qs=questions(),h='';
  qs.forEach(function(x){h+='<div class="q"><p>'+esc(x[1])+'</p><input data-k="'+x[0]+'" aria-label="'+esc(x[1])+'" value="'+esc(S.qa[x[0]])+'"></div>'});
  show(progress()+'<div class="card"><h2>A few more questions</h2><p class="note">Answer what you can. Skip anything that doesn’t apply.</p>'+h+
+ '<h3 style="margin-top:1.4rem">Add an image <small style="font-weight:400;color:var(--muted)">(optional)</small></h3><label for="img" style="margin-top:.4rem">Poster, photo, or banner for the top of your page</label><input id="img" type="file" accept="image/*"><div id="prev"></div>'+
  '<h3 style="margin-top:1.4rem">Where should sign-ups go?</h3>'+
  '<label for="ep">Web app link <small>(optional: a Google Apps Script URL that saves sign-ups to a Sheet)</small></label><input id="ep" type="url" value="'+esc(S.endpoint)+'" placeholder="https://script.google.com/macros/s/…/exec">'+
  '<p class="note">With no link, the page opens an email to your contact address instead.</p>'+
  '<div class="btns"><button id="back">Back</button><button class="p" id="next">Create plan and page</button></div></div>');
  document.getElementById('back').onclick=function(){grab();S.step=1;render()};
+ function showPrev(){document.getElementById('prev').innerHTML=S.img?'<img src="'+S.img+'" alt="Selected image preview" style="max-width:100%;max-height:240px;border-radius:10px;margin-top:.7rem"><div class="btns" style="margin-top:.6rem"><button type="button" id="rm">Remove image</button></div>':'';var r=document.getElementById('rm');if(r)r.onclick=function(){S.img='';document.getElementById('img').value='';save();showPrev()}}
+ showPrev();
+ document.getElementById('img').onchange=function(e){var f=e.target.files[0];if(!f)return;pickImg(f,function(d){if(!d){toast('That image could not be read');return}S.img=d;save();showPrev()})};
  document.getElementById('next').onclick=function(){grab();if(S.qa.aud)S.f.aud=S.qa.aud;S.step=3;S.tab='plan';save();render()};
  function grab(){app.querySelectorAll('[data-k]').forEach(function(i){S.qa[i.dataset.k]=i.value.trim()});S.endpoint=document.getElementById('ep').value.trim();save()}}
 
@@ -216,13 +221,12 @@ function landing(){
  'form{background:#fff;border-radius:14px;padding:1.4rem;box-shadow:0 2px 14px rgba(0,0,0,.08);margin:2rem 0}h2{font:700 1.5rem Georgia,serif;margin:0 0 .6rem;color:var(--p)}'+
  'label{display:block;font-weight:600;margin:.9rem 0 .3rem}input,select{width:100%;font:inherit;padding:.75rem;border:1px solid #bfcdd1;border-radius:10px}input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--a);outline-offset:2px}'+
  'button{width:100%;margin-top:1.2rem;font:inherit;font-weight:700;padding:.9rem;border:0;border-radius:10px;background:var(--a);color:#17262b;cursor:pointer}'+
- '.ok{display:none;background:#e7f4ea;border-radius:10px;padding:1rem;margin-top:1rem;font-weight:600}footer{text-align:center;color:#5d7077;font-size:.9rem;padding:0 1rem 2rem}</style></head><body>'+
+ '.ph{display:block;width:100%;height:auto;border-radius:14px;margin:2rem 0 0;box-shadow:0 2px 14px rgba(0,0,0,.12)}.ok{display:none;background:#e7f4ea;border-radius:10px;padding:1rem;margin-top:1rem;font-weight:600}footer{text-align:center;color:#5d7077;font-size:.9rem;padding:0 1rem 2rem}</style></head><body>'+
  '<section class="hero"><div class="w"><img src="'+LOGO_W+'" alt="Real Life Christian Communities" style="height:42px;width:auto;display:block;margin-bottom:1.8rem"><h1>'+esc(f.name)+'</h1><p>'+desc+'</p></div></section>'+
- '<div class="w" style="padding:0 1.4rem"><dl>'+dl+'</dl>'+
+ '<div class="w" style="padding:0 1.4rem">'+(S.img?'<img class="ph" src="'+S.img+'" alt="'+esc(f.name)+'">':'')+'<dl>'+dl+'</dl>'+
  '<form id="f"><h2>'+esc(T.verb==='Register'?'Reserve your spot':T.verb==='Get it'?'Get your copy':T.verb==='Sign up'?'Sign up':'Get updates')+'</h2>'+
  '<label for="n">Full name</label><input id="n" name="name" required autocomplete="name">'+
  '<label for="e">Email</label><input id="e" name="email" type="email" required autocomplete="email">'+
- '<label for="m">Mobile number</label><input id="m" name="phone" type="tel" autocomplete="tel">'+
  '<label for="c">Your community</label><select id="c" name="community" required><option value="">Select your community</option>'+COMMS.concat(['No Community Yet']).map(function(c){return '<option>'+esc(c)+'</option>'}).join('')+'</select>'+
  '<input type="hidden" name="audience" value="'+esc(f.comm||'Whole church')+'"><input type="hidden" name="item" value="'+esc(f.name)+'"><button type="submit">'+cta+'</button>'+
  '<div class="ok" id="ok" role="status">Thank you! We received your details and will be in touch soon.</div></form></div>'+
@@ -230,7 +234,7 @@ function landing(){
  '<script>var EP='+JSON.stringify(S.endpoint||DEFAULT_EP)+',MAIL='+JSON.stringify(f.email)+';'+
  'document.getElementById("f").addEventListener("submit",function(ev){ev.preventDefault();var fd=new FormData(ev.target),o={};fd.forEach(function(v,k){o[k]=v});'+
  'if(EP){fetch(EP,{method:"POST",mode:"no-cors",body:new URLSearchParams(o)}).then(done,done)}'+
- 'else if(MAIL){location.href="mailto:"+MAIL+"?subject="+encodeURIComponent("Sign-up: "+o.item)+"&body="+encodeURIComponent("Name: "+o.name+"\\nEmail: "+o.email+"\\nMobile: "+o.phone+"\\nCommunity: "+o.community);done()}'+
+ 'else if(MAIL){location.href="mailto:"+MAIL+"?subject="+encodeURIComponent("Sign-up: "+o.item)+"&body="+encodeURIComponent("Name: "+o.name+"\\nEmail: "+o.email+"\\nCommunity: "+o.community);done()}'+
  'else done();function done(){ev.target.reset();document.getElementById("ok").style.display="block"}});<\/script></body></html>'}
 
 function step3(){
@@ -248,7 +252,7 @@ function step3(){
  show(progress()+h);
  document.getElementById('tp').onclick=function(){S.tab='plan';step3()};document.getElementById('tl').onclick=function(){S.tab='land';step3()};
  document.getElementById('e1').onclick=function(){S.step=1;save();render()};
- document.getElementById('ne').onclick=function(){if(confirm('Clear everything and start over?')){S={step:0,type:'',f:{},qa:{},tab:'plan',theme:'teal',endpoint:'',email:''};save();render()}};
+ document.getElementById('ne').onclick=function(){if(confirm('Clear everything and start over?')){S={step:0,type:'',f:{},qa:{},tab:'plan',theme:'teal',endpoint:'',email:'',img:''};save();render()}};
  if(S.tab==='plan'){document.getElementById('cp').onclick=function(){copy(planText())};document.getElementById('pr').onclick=function(){window.print()}}
  else{var fr=document.getElementById('fr');fr.srcdoc=landing();
     document.getElementById('ch').onclick=function(){copy(landing())};
