@@ -209,7 +209,7 @@ function landing(){
  if(qa.cost)det.push(['Cost',qa.cost]);
  if(qa.delivery)det.push(['You’ll receive it',qa.delivery]);
  if(qa.stock)det.push(['Availability',qa.stock]);
- if(f.comm)det.push(['Open to',f.comm==='Whole church'?'The whole church':f.comm]);
+ if(f.comm&&f.comm!=='Whole church')det.push(['Open to',f.comm]);
  if(f.aud)det.push(['Who it’s for',f.aud]);
  var dl=det.map(function(x){return '<div><dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd></div>'}).join('');
  var desc=esc(f.desc)+(qa.more?' '+esc(qa.more):'');
@@ -270,7 +270,7 @@ function posts(){
  var done={event:'registered',resource:'signed up',service:'signed up',product:'ordered'}[S.type];
  var info=['📅 '+d+(qa.time?', '+qa.time:'')];
  if(qa.venue)info.push('📍 '+qa.venue);if(qa.schedule)info.push('🔁 '+qa.schedule);if(qa.cost)info.push('🎟 '+qa.cost);
- if(f.comm)info.push('👥 '+(f.comm==='Whole church'?'Open to the whole church':'Open to '+f.comm));
+ if(f.comm&&f.comm!=='Whole church')info.push('👥 Open to '+f.comm);
  var I=info.join('\n'),vs=VERSES[S.type];
  var V=S.verse===false?'':'\n\n“'+vs[1]+'” '+vs[0]+' (KJV)';
  var out=[];
